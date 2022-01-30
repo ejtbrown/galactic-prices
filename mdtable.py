@@ -73,9 +73,12 @@ class MdFile(object):
     def __init__(self, md_file):
         self.tables = list()
 
-        lines = md_file.readlines()
-        if len(lines) < 3:
-            return
+        if issubclass(str, md_file):
+            lines = md_file.splitlines()
+        else:
+            lines = md_file.readlines()
+            if len(lines) < 3:
+                return
 
         line = 0
         accumulate = ''

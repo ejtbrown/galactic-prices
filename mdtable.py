@@ -12,6 +12,7 @@ Warranty:
   None - use this software at your own risk!
 """
 
+
 class MdTable(object):
     def __init__(self, parse=None):
         self.raw = parse

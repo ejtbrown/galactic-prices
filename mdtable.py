@@ -19,9 +19,45 @@ class MdTable(object):
         self.table = list()
         self.header = list()
         self.title = ''
+        self.__iter_row__ = -1
 
         if self.raw is not None:
             self.parse(self.raw)
+
+    def __iter__(self):
+        self.__iter_row__ = 0
+        return self
+
+    def __next__(self):
+        if self.__iter_row__ >= len(self.table):
+            raise StopIteration
+
+        d_out = self.row(self.__iter_row__)
+        self.__iter_row__ += 1
+        return d_out
+
+    def row(row_num):
+        # Make a dict from the row, where names are keys
+        d_out = dict()
+        for i in range(0, len(self.header)):
+            d_out[self.header[i]] = self.table[row_num][i]
+        
+        return d_out
+
+    def find(index, match):
+        # If index is a name, lookup the associated header
+        if issubclass(type(index), str):
+            for i in range(0, len(self.header)):
+                if self.header[i] == index:
+                    index = i
+                    break
+
+        # Find the matching row
+        for i in range(0, len(self.table)):
+            if self.table[i][index] == match:
+                return self.row(i)
+
+        return None
 
     def parse(self, raw):
         self.raw = raw
@@ -74,7 +110,7 @@ class MdFile(object):
     def __init__(self, md_file):
         self.tables = list()
 
-        if issubclass(str, md_file):
+        if issubclass(type(md_file), str):
             lines = md_file.splitlines()
         else:
             lines = md_file.readlines()
@@ -84,17 +120,18 @@ class MdFile(object):
         line = 0
         accumulate = ''
         while line < len(lines):
-            if lines[line][0] == '|':
-                accumulate = '\n'.join(lines[line-2:line-1])
-                while line < len(lines):
-                    if len(lines[line]) > 0:
-                        if lines[line][0] == '|':
-                            accumulate += lines[line]
-                        else:
-                            self.tables.append(MdTable(accumulate))
-                            accumulate = ''
-                            break
-                    line += 1
+            if len(lines[line]) > 0:
+                if lines[line][0] == '|':
+                    accumulate = '\n'.join(lines[line-2:line-1])
+                    while line < len(lines):
+                        if len(lines[line]) > 0:
+                            if lines[line][0] == '|':
+                                accumulate += lines[line]
+                            else:
+                                self.tables.append(MdTable(accumulate))
+                                accumulate = ''
+                                break
+                        line += 1
 
             line += 1
             if accumulate != '':

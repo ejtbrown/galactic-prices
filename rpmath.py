@@ -18,15 +18,18 @@ import random
 import sys
 
 re_dice = re.compile(r'[0-9]+d[0-9]+')
+re_symbol = re.compile(r'\[[a-zA-Z0-9\s\._-]+\]')
 re_check = re.compile(r'[^0-9 +*/()-]')
 
 
-def parse(raw_in, debug=False):
+def parse(raw_in, symbols, debug=False):
     """
     parse - parses an input string like "1d20 + 5" into a final value
 
     :param raw_in:      String to be parsed
     :type raw_in: str
+    :param symbols:     dict of symbolic values to substitute
+    :type symbols: dict
     :param debug:       If True, debug messages will be output to stderr
     :type debug: bool
     :return:            Returns final value
@@ -36,6 +39,27 @@ def parse(raw_in, debug=False):
     working = raw_in
     if debug:
         sys.stderr.write("Starting with: '" + working + "'\n")
+
+    # Substitute any symbols with their values
+    while True:
+        match = re_symbol.search(working)
+        if match is None:
+            if debug:
+                sys.stderr.write("No more symbols\n")
+            break
+
+        symbol_full = match.group(0)
+        symbol_name = symbol_full.replace('[', '').replace(']', '')
+        if symbol_name not in symbols:
+            raise RuntimeError("Referenced symbol '" + symbol_name + "' not in available dict of symbols")
+
+        if debug:
+            sys.stderr.write("Found symbol '" + symbol_name + "'\n")
+        
+        working.replace(symbol_full, symbols[symbol_name])
+        if debug:
+            sys.stderr.write("Working is now: '" + working + "'\n")
+
 
     # Roll whatever dice expressions are present
     while True:
